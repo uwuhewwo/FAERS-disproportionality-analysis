@@ -100,8 +100,10 @@ summary(zoloft_unique_2021$age)
 
 #compare adr rates between indications
 
-ic_2021=ROR_comparison(zoloft_2021,not_zoloft_2021)
-ip_2021=PRR_comparison(zoloft_2021,not_zoloft_2021)
+ic_2021=ROR_comparison(zoloft_2021,not_zoloft_2021,TRUE,3)
+ip_2021=PRR_comparison(zoloft_2021,not_zoloft_2021,TRUE,3)
+#find all qualifying adrs for this year
+qualifying_adrs_2021=count_qualifying_ADRs(ip_2021,ic_2021)
 
 #chisq using patients, not cases no
 
@@ -150,8 +152,6 @@ chisq.test(c_table_ind2,simulate.p.value = TRUE)
 c_table_ind2=matrix(c(2061,965,147,48,41,0,20400,9640,796,955,961,56),ncol=6,byrow=TRUE)
 chisq.test(c_table_ind2,simulate.p.value = TRUE)
 
-#find all qualifying adrs for this year
-qualifying_adrs_2021=count_qualifying_ADRs(ip_2021,ic_2021)
 
 #5 cases
 homicide=zoloft_2021[zoloft_2021$pt=="Homicide",]

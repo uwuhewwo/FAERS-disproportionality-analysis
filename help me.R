@@ -123,8 +123,8 @@ summary(zoloft_unique$age)
 
 #compare adr rates between indications
 
-ic=ROR_comparison(zoloft,not_zoloft)
-ip=PRR_comparison(zoloft,not_zoloft)
+ic=ROR_comparison(zoloft,not_zoloft,TRUE,3)
+ip=PRR_comparison(zoloft,not_zoloft,TRUE,3)
 
 #chisq using patients, not cases no
 
@@ -173,7 +173,7 @@ help_2024=count_qualifying_ADRs(ip_2024,ic_2024)
 significant_adrs_merged=merge(merge(help_2022, help_2023,by="ADRs",all=TRUE), help_2024,by="ADRs",all=FALSE)
 #significant_adrs_merged=na.omit(significant_adrs_merged)
 #do venn diagram for all years, filter for how many meet criteria for 3/6, 4/6, 5/6 years
-#venn diagrams
+#venn diagrams -  outdated
 data1=lapply(zoloft_2023_adr$Var1, as.character)
 data2=lapply(zoloft_2024_adr$Var1, as.character)
 data3=lapply(zoloft_2022_adr$Var1, as.character)
@@ -200,17 +200,17 @@ overlap=calculate.overlap(x=list(lapply(help_2022$ADRs, as.character),lapply(hel
 qualifying_adrs_2020$year=2020
 qualifying_adrs_2021$year=2021
 qualifying_adrs_2023$year=2023
-help_2022$year=2022
-help_2024$year=2024
+qualifying_adrs_2022$year=2022
+qualifying_adrs_2024$year=2024
 ADRs_allyears$year=2019
-all_adrs=rbind(qualifying_adrs_2020, qualifying_adrs_2021,qualifying_adrs_2023,help_2022, help_2024)
+all_adrs=rbind(qualifying_adrs_2020, qualifying_adrs_2021,qualifying_adrs_2023,qualifying_adrs_2022, qualifying_adrs_2024)
 
 write_xlsx(all_adrs, "all_years_and_pooled_adrs.xlsx")
 #be warned this is fucked up because it has the pooled data mixed in, remove pooled data if you need to do year-by-year analysis
 year_counts <- all_adrs %>%
   group_by(ADRs) %>%
   dplyr::summarise(year_count = n_distinct(year)) %>%
-  filter(year_count >= 0)
+  filter(year_count >= 3)
 hist(year_counts$year_count)
 ggplot(year_counts, aes(x = year_count)) + 
   geom_histogram(colour = "black", fill = "deepskyblue3", 
@@ -250,3 +250,8 @@ pulmonarysten=zoloft_allyears[zoloft_allyears$pt=="Pulmonary artery stenosis",]
 medicationerror_reports=return_all_reports(zoloft_allyears, medicationerror)
 pulmonarytox_reports=return_all_reports(zoloft_allyears, pulmonarytox)
 pulmonarysten_reports=return_all_reports(zoloft_allyears, pulmonarysten)
+ipic2024 <-  merge(merge(year_counts, ic_2024, by = 'ADRs'),ip_2024, by="ADRs")
+ipic2023 <-  merge(merge(year_counts, ic_2023, by = 'ADRs'),ip_2023, by="ADRs")
+ipic2022 <-  merge(merge(year_counts, ic_2022, by = 'ADRs'),ip_2022, by="ADRs")
+ipic2021 <-  merge(merge(year_counts, ic_2021, by = 'ADRs'),ip_2021, by="ADRs")
+ipic2020 <-  merge(merge(year_counts, ic_2020, by = 'ADRs'),ip_2020, by="ADRs")

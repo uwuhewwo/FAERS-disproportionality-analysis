@@ -1,7 +1,8 @@
 not_zoloft_allyears=bind_rows(not_zoloft_2020,not_zoloft_2021,not_zoloft_2022,not_zoloft_2023,not_zoloft_2024)
 
-PRR_allyears_not_zoloft=PRR_comparison(not_zoloft_allyears,zoloft_allyears)
-ROR_allyears_not_zoloft=ROR_comparison(not_zoloft_allyears,zoloft_allyears)
+not_zoloft_allyears=remove_duplicate_cases(not_zoloft_allyears)[[1]]
+PRR_allyears_not_zoloft=PRR_comparison(not_zoloft_allyears,zoloft_allyears,TRUE, 3)
+ROR_allyears_not_zoloft=ROR_comparison(not_zoloft_allyears,zoloft_allyears,TRUE, 3)
 #remove 2019
 zoloft_allyears=bind_rows(zoloft_2020,zoloft_2021,zoloft_2022,zoloft_2023,zoloft_2024)
 zoloft_allyears$sex[zoloft_allyears$sex=="UNK"]=""

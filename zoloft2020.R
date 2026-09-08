@@ -100,9 +100,13 @@ summary(zoloft_unique_2020$age)
 
 #compare adr rates between indications
 
-ic_2020=ROR_comparison(zoloft_2020,not_zoloft_2020)
-ip_2020=PRR_comparison(zoloft_2020,not_zoloft_2020)
+ic_2020=ROR_comparison(zoloft_2020,not_zoloft_2020,TRUE, 3)
 
+ip_2020=PRR_comparison(zoloft_2020,not_zoloft_2020,TRUE, 3)
+
+
+#find all qualifying adrs for this year
+qualifying_adrs_2020=count_qualifying_ADRs(ip_2020,ic_2020)
 #chisq using patients, not cases no
 
 c_table_sex=matrix(c(79, 419,300  ,679   ,3666,2072),ncol=3,byrow=TRUE)
@@ -122,8 +126,8 @@ d_table_z_2020=return_demographic_table(zoloft_2020)
 d_table_c_2020=return_demographic_table(not_zoloft_2020)
 
 #ror/prr indications
-AD_ROR=ROR_comparison(zoloft_anxiety_2020,zoloft_depression_2020)
-AD_PRR=PRR_comparison(zoloft_anxiety_2020,zoloft_depression_2020)
+AD_ROR=ROR_comparison(zoloft_anxiety_2020,zoloft_depression_2020, TRUE, 3)
+AD_PRR=PRR_comparison(zoloft_anxiety_2020,zoloft_depression_2020, TRUE, 3)
 
 #depression ROR/prr counts of patients
 c_table_ind2=matrix(c(243, 460,13  ,11   ,28,0, 1747,5140,136,838,152,29),ncol=6,byrow=TRUE)
@@ -143,7 +147,3 @@ chisq.test(c_table_ind2,simulate.p.value=FALSE)
 #chisquared age
 c_table_ind2=matrix(c(87,873,20,197,121,115,4415,7254),ncol=4,byrow=TRUE)
 chisq.test(c_table_ind2)
-
-
-#find all qualifying adrs for this year
-qualifying_adrs_2020=count_qualifying_ADRs(ip_2020,ic_2020)

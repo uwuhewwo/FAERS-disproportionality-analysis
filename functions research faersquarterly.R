@@ -107,7 +107,7 @@ ROR_comparison=function(faers_dataset_1, faers_dataset_2,min.cases= FALSE, cases
 #'
 #' @examples PRR_comparison(faers_dataset, faers_dataset2)
 #' @examples PRR_comparison(faers_dataset, faers_dataset2, TRUE, 3)
-PRR_comparison=function(faers_dataset_1, faers_dataset_2, min.cases= FALSE, cases=0){
+PRR_comparison=function(faers_dataset_1, faers_dataset_2, min.cases= FALSE, cases=3){
   if(is.null(faers_dataset_1)|is.null(faers_dataset_2)){
     print("Empty dataset!")
     return (NULL)

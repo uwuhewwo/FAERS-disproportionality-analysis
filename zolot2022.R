@@ -100,9 +100,11 @@ summary(zoloft_unique_2022$age)
 
 #compare adr rates between indications
 
-ic_2022=ROR_comparison(zoloft_2022,not_zoloft_2022)
-ip_2022=PRR_comparison(zoloft_2022,not_zoloft_2022)
+ic_2022=ROR_comparison(zoloft_2022,not_zoloft_2022,TRUE,3)
+ip_2022=PRR_comparison(zoloft_2022,not_zoloft_2022,TRUE,3)
 
+#find all qualifying adrs for this year
+qualifying_adrs_2022=count_qualifying_ADRs(ip_2022,ic_2022)
 #chisq using patients, not cases no
 
 c_table_sex=matrix(c(83,641,287  ,521   ,4435,2258),ncol=3,byrow=TRUE)
@@ -122,8 +124,8 @@ d_table_z_2022=return_demographic_table(zoloft_2022)
 d_table_c_2022=return_demographic_table(not_zoloft_2022)
 
 #ror/prr indications
-AD_ROR=ROR_comparison(zoloft_anxiety_2022,zoloft_depression_2022)
-AD_PRR=PRR_comparison(zoloft_anxiety_2022,zoloft_depression_2022)
+AD_ROR=ROR_comparison(zoloft_anxiety_2022,zoloft_depression_2022,TRUE,3)
+AD_PRR=PRR_comparison(zoloft_anxiety_2022,zoloft_depression_2022,TRUE,3)
 
 #depression ROR/prr counts of patients
 c_table_ind2=matrix(c(243, 460,13  ,11   ,28,0, 1747,5140,136,838,152,29),ncol=6,byrow=TRUE)
@@ -149,6 +151,3 @@ chisq.test(c_table_ind2,simulate.p.value = TRUE)
 
 c_table_ind2=matrix(c(2051,1136,250,65,67,9,20128,8953,795,825,1000,100),ncol=6,byrow=TRUE)
 chisq.test(c_table_ind2,simulate.p.value = TRUE)
-
-#find all qualifying adrs for this year
-qualifying_adrs_2022=count_qualifying_ADRs(ip_2022,ic_2022)

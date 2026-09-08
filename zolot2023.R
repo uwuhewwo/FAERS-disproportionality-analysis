@@ -100,9 +100,12 @@ summary(zoloft_unique_2023$age)
 
 #compare adr rates between indications
 
-ic_2023=ROR_comparison(zoloft_2023,not_zoloft_2023)
-ip_2023=PRR_comparison(zoloft_2023,not_zoloft_2023)
+ic_2023=ROR_comparison(zoloft_2023,not_zoloft_2023,TRUE,3)
+ip_2023=PRR_comparison(zoloft_2023,not_zoloft_2023,TRUE,3)
 
+
+#find all qualifying adrs for this year
+qualifying_adrs_2023=count_qualifying_ADRs(ip_2023,ic_2023)
 #chisq using patients, not cases no
 
 c_table_sex=matrix(c(79, 419,300  ,679   ,3666,2072),ncol=3,byrow=TRUE)
@@ -139,7 +142,3 @@ chisq.test(c_table_ind2,simulate.p.value=FALSE)
 #chisquared age
 c_table_ind2=matrix(c(104 , 500,1  ,186   ,96, 4598, 89, 1596),ncol=4,byrow=TRUE)
 chisq.test(c_table_ind2)
-
-
-#find all qualifying adrs for this year
-qualifying_adrs_2023=count_qualifying_ADRs(ip_2023,ic_2023)
