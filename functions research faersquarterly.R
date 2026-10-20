@@ -67,7 +67,7 @@ return_dosage_outliers=function(faers_dataset,max_dose, na.rm=TRUE){
 #' @returns Dataframe of all adverse events shared by datasets, ROR associated with them, and 95% confidence interval.
 #'
 #' @examples ROR_comparison(faers_dataset, faers_dataset2)
-ROR_comparison=function(faers_dataset_1, faers_dataset_2,min.cases= FALSE, cases=0){
+ROR_comparison=function(faers_dataset_1, faers_dataset_2,min.cases= FALSE, cases=3){
   if(is.null(faers_dataset_1)|is.null(faers_dataset_2)){
     print("Empty dataset!")
     return (NULL)
@@ -80,7 +80,7 @@ ROR_comparison=function(faers_dataset_1, faers_dataset_2,min.cases= FALSE, cases
   adrs1=as.data.frame(table(faers_dataset_1$pt))
   adrs2=as.data.frame(table(faers_dataset_2$pt))
   if (min.cases==TRUE){
-    adrs1 = adrs1[adrs1$Freq >cases,]
+    adrs1 = adrs1[adrs1$Freq >=cases,]
   }
   overlapping=merge(adrs1,adrs2, by.x="Var1",by.y="Var1")
   cont_table=table(overlapping$Freq.x, overlapping$Freq.y)
@@ -120,7 +120,7 @@ PRR_comparison=function(faers_dataset_1, faers_dataset_2, min.cases= FALSE, case
   adrs1=as.data.frame(table(faers_dataset_1$pt))
   adrs2=as.data.frame(table(faers_dataset_2$pt))
   if (min.cases==TRUE){
-    adrs1 = adrs1[adrs1$Freq >cases,]
+    adrs1 = adrs1[adrs1$Freq >=cases,]
   }
   overlapping=merge(adrs1,adrs2, by.x="Var1",by.y="Var1")
   PRR_table=data.frame(ADRs=overlapping$Var1)
@@ -299,12 +299,11 @@ remove_duplicate_cases=function(faers_dataset){
     
   }
   copy_of_faers=data.frame(faers_dataset)
-  copy_of_faers$newcol = is.na(duplicated(copy_of_faers[,c('age','sex', 'wt','pt','event_dt')]))|duplicated(copy_of_faers[,c('age','sex', 'wt','pt','event_dt')]) | duplicated(copy_of_faers[,c('age','sex', 'wt','pt','rept_dt')], fromLast = T)
-  
-  dupes=faers_dataset[copy_of_faers$newcol==TRUE,]
-  cleaned=faers_dataset[copy_of_faers$newcol==FALSE,]
-  dupes$newcol=NULL
-  cleaned$newcol=NULL
+  key <- copy_of_faers[, c('age','sex','wt','pt','event_dt')]
+  keep <- !duplicated(key)
+  cleaned <- faers_dataset[keep, ]
+  dupes   <- faers_dataset[!keep, ]
+
   print(paste("Discovered and removed ", nrow(dupes), " duplicate cases."))
   return (list(cleaned, dupes))
 }
@@ -388,3 +387,35 @@ return_all_reports=function(faers_dataset, faers_dataset_subset){
   
 }
 
+
+
+prr_wrapper=function(faers_dataset_1, faers_dataset_2, min_cases){
+  if(is.null(faers_dataset_1)|is.null(faers_dataset_2)){
+    print("Empty dataset!")
+    return (NULL)
+  }
+  if (dim(faers_dataset_1)[1]==0|dim(faers_dataset_1)[2]==0|dim(faers_dataset_2)[1]==0|dim(faers_dataset_2)[2]==0){
+    print("Empty dataset!")
+    return (NULL)
+    
+  }
+  restricted=PRR_comparison(faers_dataset_1 = faers_dataset_1, faers_dataset_2 = faers_dataset_2, min.cases = TRUE,cases=min_cases )
+  unrestricted=PRR_comparison(faers_dataset_1 = faers_dataset_1, faers_dataset_2 = faers_dataset_2, min.cases = FALSE)
+  return (c(restricted, unrestricted))
+}
+
+
+ror_wrapper=function(faers_dataset_1, faers_dataset_2, min_cases){
+  if(is.null(faers_dataset_1)|is.null(faers_dataset_2)){
+    print("Empty dataset!")
+    return (NULL)
+  }
+  if (dim(faers_dataset_1)[1]==0|dim(faers_dataset_1)[2]==0|dim(faers_dataset_2)[1]==0|dim(faers_dataset_2)[2]==0){
+    print("Empty dataset!")
+    return (NULL)
+    
+  }
+  restricted=ROR_comparison(faers_dataset_1 = faers_dataset_1, faers_dataset_2 = faers_dataset_2, min.cases = TRUE,cases=min_cases )
+  unrestricted=ROR_comparison(faers_dataset_1 = faers_dataset_1, faers_dataset_2 = faers_dataset_2, min.cases = FALSE)
+  return (c(restricted, unrestricted))
+}

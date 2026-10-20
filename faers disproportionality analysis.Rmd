@@ -1,0 +1,567 @@
+---
+title: "FAERS Disproportionality Analysis"
+author: "Karen Lu"
+date: "2026-09-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(plyr) 
+library(dplyr)
+
+library(VennDiagram)
+library(stringr)
+library(tidyverse)
+library(writexl)
+
+library(VennDiagram)
+
+library(tidyr)
+library(faersquarterlydata)
+library(datawizard)
+library(data.table)
+```
+
+## Initialization
+
+Import data.
+
+```{r year Data imports}
+#do i need to change file locations/include my functions?
+#separate to implement stage 1 and stage 2 cleaning/make a new doc?
+#2020
+
+faers_2020 <- retrieve_faersascii(ascii_dir = "C:/Users/kjinl/Documents/2024 tri1/research/2020/ASCII",drug_indication_pattern ="Anxiety|Depression|Premenstrual dysphoric disorder|Binge eating disorder|Post-traumatic stress disorder|PTSD|Generalized anxiety disorder|Bulimia|Depression|Major depressive disorder|Panic|OCD|Obsessive-compulsive disorder")
+faers_data_unified_2020 <- unify_tabular_ascii(ascii_list = faers_2020)
+faers_data_unified_2020=remove_duplicate_cases(faers_data_unified_2020)[[1]]
+
+zoloft_2020 <- filter( 
+  faers_data_unified_2020,drugname_all == "SERTRALINE" | drugname_all == "ZOLOFT" |drugname_all == "SERTRALINE HYDROCHLORIDE"|drugname_all == "LUSTRAL") 
+not_zoloft_2020=filter( 
+  faers_data_unified_2020,drugname_all != "SERTRALINE" & drugname_all != "ZOLOFT" &drugname_all != "SERTRALINE HYDROCHLORIDE"&drugname_all != "LUSTRAL") 
+#2021
+faers_2021 <- retrieve_faersascii(ascii_dir = "C:/Users/kjinl/Documents/2024 tri1/research/2021/ASCII",drug_indication_pattern ="Anxiety|Depression|Premenstrual dysphoric disorder|Binge eating disorder|Post-traumatic stress disorder|PTSD|Generalized anxiety disorder|Bulimia|Depression|Major depressive disorder|Panic|OCD|Obsessive-compulsive disorder")
+faers_data_unified_2021 <- unify_tabular_ascii(ascii_list = faers_2021)
+faers_data_unified_2021=remove_duplicate_cases(faers_data_unified_2021)[[1]]
+
+zoloft_2021 <- filter( 
+  faers_data_unified_2021,drugname_all == "SERTRALINE" | drugname_all == "ZOLOFT" |drugname_all == "SERTRALINE HYDROCHLORIDE"|drugname_all == "LUSTRAL") 
+not_zoloft_2021=filter( 
+  faers_data_unified_2021,drugname_all != "SERTRALINE" & drugname_all != "ZOLOFT" &drugname_all != "SERTRALINE HYDROCHLORIDE"&drugname_all != "LUSTRAL") 
+#2022
+faers_2022 <- retrieve_faersascii(ascii_dir = "C:/Users/kjinl/Documents/2024 tri1/research/2022/ASCII",drug_indication_pattern ="Anxiety|Depression|Premenstrual dysphoric disorder|Binge eating disorder|Post-traumatic stress disorder|PTSD|Generalized anxiety disorder|Bulimia|Depression|Major depressive disorder|Panic|OCD|Obsessive-compulsive disorder")
+faers_data_unified_2022<- unify_tabular_ascii(ascii_list = faers_2022)
+faers_data_unified_2022=remove_duplicate_cases(faers_data_unified_2022)[[1]]
+
+zoloft_2022 <- filter(faers_data_unified_2022,drugname_all == "SERTRALINE" | drugname_all == "ZOLOFT" |drugname_all == "SERTRALINE HYDROCHLORIDE"|drugname_all == "LUSTRAL") 
+not_zoloft_2022=filter(faers_data_unified_2022,drugname_all != "SERTRALINE" & drugname_all != "ZOLOFT" &drugname_all != "SERTRALINE HYDROCHLORIDE"&drugname_all != "LUSTRAL") 
+
+#2023
+faers_2023 <- retrieve_faersascii(ascii_dir = "C:/Users/kjinl/Documents/2024 tri1/research/2023/ASCII",drug_indication_pattern ="Anxiety|Depression|Premenstrual dysphoric disorder|Binge eating disorder|Post-traumatic stress disorder|PTSD|Generalized anxiety disorder|Bulimia|Depression|Major depressive disorder|Panic|OCD|Obsessive-compulsive disorder")
+faers_data_unified_2023 <- unify_tabular_ascii(ascii_list = faers_2023)
+faers_data_unified_2023=remove_duplicate_cases(faers_data_unified_2023)[[1]]
+
+zoloft_2023 <- filter( 
+  faers_data_unified_2023,drugname_all == "SERTRALINE" | drugname_all == "ZOLOFT" |drugname_all == "SERTRALINE HYDROCHLORIDE"|drugname_all == "LUSTRAL") 
+
+not_zoloft_2023=filter( 
+  faers_data_unified_2023,drugname_all != "SERTRALINE" & drugname_all != "ZOLOFT" &drugname_all != "SERTRALINE HYDROCHLORIDE"&drugname_all != "LUSTRAL") 
+
+#2024
+
+faers_2024 <- retrieve_faersascii(ascii_dir = "C:/Users/kjinl/Documents/2024 tri1/research/2024/ASCII",drug_indication_pattern ="Anxiety|Depression|Premenstrual dysphoric disorder|Binge eating disorder|Post-traumatic stress disorder|PTSD|Generalized anxiety disorder|Bulimia|Depression|Major depressive disorder|Panic|OCD|Obsessive-compulsive disorder")
+faers_data_unified_2024<- unify_tabular_ascii(ascii_list = faers_2024)
+faers_data_unified_2024=remove_duplicate_cases(faers_data_unified_2024)[[1]]
+
+zoloft_2024 <- filter( 
+  faers_data_unified_2024,drugname_all == "SERTRALINE" | drugname_all == "ZOLOFT" |drugname_all == "SERTRALINE HYDROCHLORIDE"|drugname_all == "LUSTRAL") 
+not_zoloft_2024=filter( 
+  faers_data_unified_2024,drugname_all != "SERTRALINE" & drugname_all != "ZOLOFT" &drugname_all != "SERTRALINE HYDROCHLORIDE"&drugname_all != "LUSTRAL") 
+
+
+```
+
+Merge FAERS data from 2020-4 to create allyears datasets for Zoloft and control.
+```{r allyears}
+
+not_zoloft_allyears=bind_rows(not_zoloft_2020,not_zoloft_2021,not_zoloft_2022,not_zoloft_2023,not_zoloft_2024)
+
+not_zoloft_allyears=remove_duplicate_cases(not_zoloft_allyears)[[1]]
+
+zoloft_allyears=bind_rows(zoloft_2020,zoloft_2021,zoloft_2022,zoloft_2023,zoloft_2024)
+zoloft_allyears=remove_duplicate_cases(zoloft_allyears)[[1]]
+
+#fix entry error in unified dataset
+zoloft_allyears$sex[zoloft_allyears$sex=="UNK"]=""
+```
+
+Split allyears datasets to create new yearly datasets. Splitting datasets this way is a more efficient method of removing duplicates and correctly sorting data.
+
+```{r new yearly}
+zoloft_2020_new=zoloft_allyears %>% filter(between(fda_dt, as.Date("2020-1-1"),as.Date("2020-12-31")))
+zoloft_2021_new=zoloft_allyears %>% filter(between(fda_dt, as.Date("2021-1-1"),as.Date("2021-12-31")))
+zoloft_2022_new=zoloft_allyears %>% filter(between(fda_dt, as.Date("2022-1-1"),as.Date("2022-12-31")))
+zoloft_2023_new=zoloft_allyears %>% filter(between(fda_dt, as.Date("2023-1-1"),as.Date("2023-12-31")))
+zoloft_2024_new=zoloft_allyears %>% filter(between(fda_dt, as.Date("2024-1-1"),as.Date("2024-12-31")))
+
+not_zoloft_2020_new=not_zoloft_allyears %>% filter(between(fda_dt, as.Date("2020-1-1"),as.Date("2020-12-31")))
+not_zoloft_2021_new=not_zoloft_allyears %>% filter(between(fda_dt, as.Date("2021-1-1"),as.Date("2021-12-31")))
+not_zoloft_2022_new=not_zoloft_allyears %>% filter(between(fda_dt, as.Date("2022-1-1"),as.Date("2022-12-31")))
+not_zoloft_2023_new=not_zoloft_allyears %>% filter(between(fda_dt, as.Date("2023-1-1"),as.Date("2023-12-31")))
+not_zoloft_2024_new=not_zoloft_allyears %>% filter(between(fda_dt, as.Date("2024-1-1"),as.Date("2024-12-31")))
+```
+Creation of data sets separated by unique patient. This allows us to determine the number of indiviudals who reported symptoms.
+```{r unique}
+zoloft_allyears_unique=distinct(zoloft_allyears, primaryid, .keep_all = TRUE)
+not_zoloft_allyears_unique=distinct(not_zoloft_allyears, primaryid, .keep_all = TRUE)
+
+```
+Run PRR and ROR calculation are run on the allyears dataset and the qualifying ADRs are counted, restricted by case number and unrestricted for sensitivity analysis. 
+```{r count}
+
+PRR_allyears_not_zoloft_restricted=as.data.frame(prr_wrapper(zoloft_allyears, not_zoloft_allyears, 3)[1:4])
+PRR_allyears_not_zoloft_unrestricted=as.data.frame(prr_wrapper(zoloft_allyears, not_zoloft_allyears, 3)[5:8])
+
+ROR_allyears_not_zoloft_restricted=as.data.frame(ror_wrapper(zoloft_allyears, not_zoloft_allyears, 3)[1:4])
+ROR_allyears_not_zoloft_unrestricted=as.data.frame(ror_wrapper(zoloft_allyears, not_zoloft_allyears, 3)[5:8])
+
+ADRs_allyears_restricted=count_qualifying_ADRs(PRR_dataset = PRR_allyears_not_zoloft_restricted, ROR_dataset = ROR_allyears_not_zoloft_restricted)
+
+
+ADRs_allyears_unrestricted=count_qualifying_ADRs(PRR_dataset = PRR_allyears_not_zoloft_unrestricted, ROR_dataset = ROR_allyears_not_zoloft_unrestricted)
+
+```
+ADR rate calculation for Zoloft pooled data.
+```{r adrrate}
+all_years_adr_rate=adr_rate(zoloft_allyears)
+
+```
+Demographics tables for pooled control and Zoloft groups.
+
+```{r zoloft demotable, echo=FALSE}
+
+d_table_z_all=return_demographic_table(zoloft_allyears)
+print(d_table_z_all)
+
+```
+
+```{r control demotable, echo=FALSE}
+
+d_table_c_all=return_demographic_table(not_zoloft_allyears)
+print(d_table_c_all)
+
+```
+Counting indications for pooled Zoloft and control groups.
+```{r zoloft indication, echo=FALSE}
+
+zoloft_indi_all=as.data.frame(table(zoloft_allyears$indi_pt_all))
+zoloft_indi_all_final=count_indications (c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual "),zoloft_allyears)
+print(zoloft_indi_all_final)
+
+```
+
+```{r control indication, echo=FALSE}
+
+not_zoloft_indi_all=as.data.frame(table(not_zoloft_allyears$indi_pt_all))
+not_zoloft_indi_final=count_indications (c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual "),not_zoloft_allyears)
+print(not_zoloft_indi_final)
+```
+Yearly analysis, beginning with 2020.
+```{r 2020}
+#create new dataset for unique patients 
+zoloft_unique_2020=distinct(zoloft_2020_new, primaryid, .keep_all = TRUE)
+not_zoloft_unique_2020=distinct(not_zoloft_2020_new, primaryid, .keep_all = TRUE)
+
+#
+zoloft_unique_druginfo_2020=rbindlist(zoloft_unique_2020$patient_drug)
+
+```
+
+```{r prr ror 2020}
+#calculate prr/ror with limitations on number of cases against no limitations
+ip_2020_restricted=as.data.frame(prr_wrapper(zoloft_2020, not_zoloft_2020, 3)[1:4])
+ip_2020_unrestricted=as.data.frame(prr_wrapper(zoloft_2020, not_zoloft_2020, 3)[5:8])
+
+ic_2020_restricted=as.data.frame(ror_wrapper(zoloft_2020, not_zoloft_2020, 3)[1:4])
+ic_2020_unrestricted=as.data.frame(ror_wrapper(zoloft_2020, not_zoloft_2020, 3)[5:8])
+
+#count qualifying adrs for both cases
+qualifying_adrs_2020_restricted=count_qualifying_ADRs(PRR_dataset = ip_2020_restricted, ROR_dataset = ic_2020_restricted)
+
+
+qualifying_adrs_2020_unrestricted=count_qualifying_ADRs(PRR_dataset = ip_2020_unrestricted, ROR_dataset = ic_2020_unrestricted)
+```
+
+
+
+
+Chisquared for cleaning method 1
+```{r chisq 1}
+
+print("Indication Chisquared test by case")
+set.seed(1)
+c_table_ind2=matrix(rbind(zoloft_indi_all_final,not_zoloft_indi_final)$by_case,ncol=6,byrow=TRUE)
+chisq.test(c_table_ind2,simulate.p.value=TRUE)
+
+print("Indication Chisquared test by patient")
+c_table_ind2=matrix(rbind(zoloft_indi_all_final,not_zoloft_indi_final)$count,ncol=6,byrow=TRUE)
+chisq.test(c_table_ind2,simulate.p.value=TRUE)
+
+#chisquared sex
+
+print("Sex Chisquared test")
+
+c_table_ind2=matrix(as.data.frame(rbind(d_table_z_all[1:3,], d_table_c_all[1:3,]))$Count,ncol=2)
+chisq.test(c_table_ind2)
+
+#chisquared weight
+print("Weight Chisquared test")
+c_table_ind2=matrix(as.data.frame(rbind(d_table_z_all[5:7,], d_table_c_all[5:7,]))$Count,ncol=2)
+chisq.test(c_table_ind2,simulate.p.value=FALSE)
+
+#chisquared age
+print("Age Chisquared test")
+c_table_ind2=matrix(as.data.frame(rbind(d_table_z_all[8:11,], d_table_c_all[8:11,]))$Count,ncol=2)
+chisq.test(c_table_ind2)
+
+```
+Chisquared for stage 1 cleanin
+#still needs fixing
+```{r chisq 2}
+set.seed(1)
+print("Indication Chisquared test by case")
+c_table_ind2=matrix(c(67528,31568,2618,3378,3647,367,6721,3296,506,249,288,12),ncol=6,byrow=TRUE)
+colnames(c_table_ind2)=c("Anxiety","Depression","Panic", "Post-traumatic","Obsessive-Compulsive","Other")
+rownames(c_table_ind2)=c("zoloft","not-zoloft")
+chisq.test(c_table_ind2,simulate.p.value=TRUE)
+
+print("Indication Chisquared test by patient")
+c_table_ind2=matrix(c(20261,7300,634,647,699,81,2105,985,182,60,77,6),ncol=6,byrow=TRUE)
+colnames(c_table_ind2)=c("Anxiety","Depression","Panic", "Post-traumatic","Obsessive-Compulsive","Other")
+rownames(c_table_ind2)=c("zoloft","not-zoloft")
+chisq.test(c_table_ind2,simulate.p.value=TRUE)
+
+#chisquared sex
+
+print("Sex Chisquared test")
+c_table_ind2=matrix(c(17228,9300,1933, 1920,1055,341),ncol=3,byrow=TRUE)
+chisq.test(c_table_ind2)
+
+#chisquared weight
+print("Weight Chisquared test")
+c_table_ind2=matrix(c(1299,9026,1432,16704,215,1343,124,1644),ncol=4,byrow=TRUE)
+chisq.test(c_table_ind2,simulate.p.value=FALSE)
+
+#chisquared age
+print("Age Chisquared test")
+c_table_ind2=matrix(c(1328,21122,191, 5820,334,2330,31,621),ncol=4,byrow=TRUE)
+chisq.test(c_table_ind2)
+
+```
+
+# 2021
+```{r 2021}
+#create new dataset for unique patients 
+zoloft_unique_2021=distinct(zoloft_2021_new, primaryid, .keep_all = TRUE)
+not_zoloft_unique_2021=distinct(not_zoloft_2021_new, primaryid, .keep_all = TRUE)
+
+#
+zoloft_unique_druginfo_2021=rbindlist(zoloft_unique_2021$patient_drug)
+
+```
+
+```{r 2021 indication table}
+print("Zoloft Indications")
+
+#Table for indications
+zoloft_indi_final_2021=count_indications (c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual "),zoloft_2021_new)
+print(zoloft_indi_final_2021)
+not_zoloft_indi_2021=count_indications(c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual","Bulimia"),not_zoloft_2021_new)
+print("Not Zoloft Indications")
+print(not_zoloft_indi_2021)
+```
+
+
+```{r prr ror 2021}
+#calculate prr/ror with limitations on number of cases against no limitations
+
+ip_2021_restricted=as.data.frame(prr_wrapper(zoloft_2021, not_zoloft_2021, 3)[1:4])
+ip_2021_unrestricted=as.data.frame(prr_wrapper(zoloft_2021, not_zoloft_2021, 3)[5:8])
+
+ic_2021_restricted=as.data.frame(ror_wrapper(zoloft_2021, not_zoloft_2021, 3)[1:4])
+ic_2021_unrestricted=as.data.frame(ror_wrapper(zoloft_2021, not_zoloft_2021, 3)[5:8])
+
+#count qualifying adrs for both cases
+qualifying_adrs_2021_restricted=count_qualifying_ADRs(PRR_dataset = ip_2021_restricted, ROR_dataset = ic_2021_restricted)
+
+
+qualifying_adrs_2021_unrestricted=count_qualifying_ADRs(PRR_dataset = ip_2021_unrestricted, ROR_dataset = ic_2021_unrestricted)
+
+
+```
+
+
+# 2022
+```{r 2021}
+#create new dataset for unique patients 
+zoloft_unique_2022=distinct(zoloft_2022_new, primaryid, .keep_all = TRUE)
+not_zoloft_unique_2022=distinct(not_zoloft_2022_new, primaryid, .keep_all = TRUE)
+
+#examine drug data
+zoloft_unique_druginfo_2022=rbindlist(zoloft_unique_2022$patient_drug)
+
+```
+
+```{r 2022 indication table}
+print("Zoloft Indications")
+
+#Table for indications
+zoloft_indi_final_2022=count_indications (c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual "),zoloft_2022_new)
+print(zoloft_indi_final_2022)
+not_zoloft_indi_2022=count_indications(c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual","Bulimia"),not_zoloft_2022_new)
+print("Not Zoloft Indications")
+print(not_zoloft_indi_2022)
+```
+
+
+```{r prr ror 2022}
+#calculate prr/ror with limitations on number of cases against no limitations
+
+ip_2022_restricted=as.data.frame(prr_wrapper(zoloft_2022, not_zoloft_2022, 3)[1:4])
+ip_2022_unrestricted=as.data.frame(prr_wrapper(zoloft_2022, not_zoloft_2022, 3)[5:8])
+
+ic_2022_restricted=as.data.frame(ror_wrapper(zoloft_2022, not_zoloft_2022, 3)[1:4])
+ic_2022_unrestricted=as.data.frame(ror_wrapper(zoloft_2022, not_zoloft_2022, 3)[5:8])
+
+#count qualifying adrs for both cases
+qualifying_adrs_2022_restricted=count_qualifying_ADRs(PRR_dataset = ip_2022_restricted, ROR_dataset = ic_2022_restricted)
+
+
+qualifying_adrs_2022_unrestricted=count_qualifying_ADRs(PRR_dataset = ip_2022_unrestricted, ROR_dataset = ic_2022_unrestricted)
+```
+
+
+# 2023
+```{r 2023}
+#create new dataset for unique patients 
+zoloft_unique_2023=distinct(zoloft_2023_new, primaryid, .keep_all = TRUE)
+not_zoloft_unique_2023=distinct(not_zoloft_2023_new, primaryid, .keep_all = TRUE)
+
+#
+zoloft_unique_druginfo_2023=rbindlist(zoloft_unique_2023$patient_drug)
+
+```
+
+```{r 2023 indication table}
+print("Zoloft Indications")
+
+#Table for indications
+zoloft_indi_final_2023=count_indications (c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual "),zoloft_2023_new)
+print(zoloft_indi_final_2023)
+not_zoloft_indi_2023=count_indications(c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual","Bulimia"),not_zoloft_2023_new)
+print("Not Zoloft Indications")
+print(not_zoloft_indi_2023)
+```
+
+
+```{r prr ror 2023}
+#calculate prr/ror with limitations on number of cases against no limitations
+
+ip_2023_restricted=as.data.frame(prr_wrapper(zoloft_2023, not_zoloft_2023, 3)[1:4])
+ip_2023_unrestricted=as.data.frame(prr_wrapper(zoloft_2023, not_zoloft_2023, 3)[5:8])
+
+ic_2023_restricted=as.data.frame(ror_wrapper(zoloft_2023, not_zoloft_2023, 3)[1:4])
+ic_2023_unrestricted=as.data.frame(ror_wrapper(zoloft_2023, not_zoloft_2023, 3)[5:8])
+
+#count qualifying adrs for both cases
+qualifying_adrs_2023_restricted=count_qualifying_ADRs(PRR_dataset = ip_2023_restricted, ROR_dataset = ic_2023_restricted)
+
+
+qualifying_adrs_2023_unrestricted=count_qualifying_ADRs(PRR_dataset = ip_2023_unrestricted, ROR_dataset = ic_2023_unrestricted)
+```
+
+# 2024
+```{r 2024}
+#create new dataset for unique patients 
+zoloft_unique_2024=distinct(zoloft_2024_new, primaryid, .keep_all = TRUE)
+not_zoloft_unique_2024=distinct(not_zoloft_2024_new, primaryid, .keep_all = TRUE)
+
+#examine drug data
+zoloft_unique_druginfo_2024=rbindlist(zoloft_unique_2024$patient_drug)
+
+```
+
+```{r 2024 indication table}
+print("Zoloft Indications")
+
+#Table for indications
+zoloft_indi_final_2024=count_indications (c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual "),zoloft_2024_new)
+print(zoloft_indi_final_2024)
+not_zoloft_indi_2024=count_indications(c("Anxiety", "Depression", "Panic", "Post-traumatic", "Obsessive-compulsive", "Premenstrual","Bulimia"),not_zoloft_2024_new)
+print("Not Zoloft Indications")
+print(not_zoloft_indi_2024)
+```
+
+
+```{r prr ror 2024}
+#calculate prr/ror with limitations on number of cases against no limitations
+ip_2024_restricted=as.data.frame(prr_wrapper(zoloft_2024, not_zoloft_2024, 3)[1:4])
+ip_2024_unrestricted=as.data.frame(prr_wrapper(zoloft_2024, not_zoloft_2024, 3)[5:8])
+
+ic_2024_restricted=as.data.frame(ror_wrapper(zoloft_2024, not_zoloft_2024, 3)[1:4])
+ic_2024_unrestricted=as.data.frame(ror_wrapper(zoloft_2024, not_zoloft_2024, 3)[5:8])
+
+#count qualifying adrs for both cases
+qualifying_adrs_2024_restricted=count_qualifying_ADRs(PRR_dataset = ip_2024_restricted, ROR_dataset = ic_2024_restricted)
+
+
+qualifying_adrs_2024_unrestricted=count_qualifying_ADRs(PRR_dataset = ip_2024_unrestricted, ROR_dataset = ic_2024_unrestricted)
+```
+Numbers calculations:
+
+```{r numbers}
+print("# of rows in all 5 years (after cleaning):")
+print(nrow(faers_data_unified_2020)+nrow(faers_data_unified_2021)+nrow(faers_data_unified_2022)+nrow(faers_data_unified_2023)+nrow(faers_data_unified_2024))
+
+print(nrow(zoloft_2020)+nrow(zoloft_2021)+nrow(zoloft_2023)+nrow(zoloft_2022)+nrow(zoloft_2024))
+print(nrow(not_zoloft_2020)+nrow(not_zoloft_2021)+nrow(not_zoloft_2023)+nrow(not_zoloft_2022)+nrow(not_zoloft_2024))
+print(nrow(not_zoloft_unique_2020)+nrow(not_zoloft_unique_2021)+nrow(not_zoloft_unique_2023)+nrow(not_zoloft_unique_2022)+nrow(not_zoloft_unique_2024))
+print(nrow(zoloft_unique_2020)+nrow(zoloft_unique_2021)+nrow(zoloft_unique_2023)+nrow(zoloft_unique_2022)+nrow(zoloft_unique_2024))
+```
+
+Prepare the Venn Diagram
+
+
+```{r VD}
+
+
+data1=lapply(qualifying_adrs_2024_restricted$ADRs, as.character)
+data2=lapply(qualifying_adrs_2023_restricted$ADRs, as.character)
+data3=lapply(qualifying_adrs_2022_restricted$ADRs, as.character)
+data4=lapply(qualifying_adrs_2021_restricted$ADRs, as.character)
+data5=lapply(qualifying_adrs_2020_restricted$ADRs, as.character)
+overlap_adrs=venn.diagram(x=list(data1,data2,data3,data4,data5),
+             category.names = c("2024","2023","2022","2021","2020"),
+             filename = NULL, 
+             col=c("#440154ff", '#21908dff', '#fde725ff', '#F54927','#55E678'),
+             fill = c(alpha("#440154ff",0.3), alpha('#21908dff',0.3), alpha('#fde725ff',0.3),alpha('#F54927',0.3),alpha('#55E678',0.3)),)
+print(overlap_adrs)
+
+```
+Counting number of years ADRs occurred, both greater than 3 and any year at all.
+```{r yearcounts}
+
+qualifying_adrs_2020_restricted$year=2020
+qualifying_adrs_2021_restricted$year=2021
+qualifying_adrs_2023_restricted$year=2023
+qualifying_adrs_2022_restricted$year=2022
+qualifying_adrs_2024_restricted$year=2024
+all_adrs=rbind(qualifying_adrs_2020_restricted, qualifying_adrs_2021_restricted,qualifying_adrs_2023_restricted,qualifying_adrs_2022_restricted, qualifying_adrs_2024_restricted)
+
+all_adrs=rbind(qualifying_adrs_2020_restricted, qualifying_adrs_2021_restricted,qualifying_adrs_2023_restricted,qualifying_adrs_2022_restricted, qualifying_adrs_2024_restricted)
+year_counts3_restricted <- all_adrs %>%
+  group_by(ADRs) %>%
+  dplyr::summarise(year_count = n_distinct(year)) %>%
+  filter(year_count >= 3)
+year_counts0_restricted <- all_adrs %>%
+  group_by(ADRs) %>%
+  dplyr::summarise(year_count = n_distinct(year)) %>%
+  filter(year_count >= 0)
+
+```
+
+Counting number of years ADRs occurred, both greater than 3 and any year at all without restricting the number of cases.
+```{r yearcounts unrestricted}
+
+qualifying_adrs_2020_unrestricted$year=2020
+qualifying_adrs_2021_unrestricted$year=2021
+qualifying_adrs_2023_unrestricted$year=2023
+qualifying_adrs_2022_unrestricted$year=2022
+qualifying_adrs_2024_unrestricted$year=2024
+all_adrs=rbind(qualifying_adrs_2020_unrestricted, qualifying_adrs_2021_unrestricted,qualifying_adrs_2023_unrestricted,qualifying_adrs_2022_unrestricted, qualifying_adrs_2024_restricted)
+
+all_adrs=rbind(qualifying_adrs_2020_unrestricted, qualifying_adrs_2021_unrestricted,qualifying_adrs_2023_unrestricted,qualifying_adrs_2022_unrestricted, qualifying_adrs_2024_unrestricted)
+year_counts3_unrestricted <- all_adrs %>%
+  group_by(ADRs) %>%
+  dplyr::summarise(year_count = n_distinct(year)) %>%
+  filter(year_count >= 3)
+year_counts0_unrestricted <- all_adrs %>%
+  group_by(ADRs) %>%
+  dplyr::summarise(year_count = n_distinct(year)) %>%
+  filter(year_count >= 0)
+
+```
+
+```{r hist}
+ggplot(year_counts0_restricted, aes(x = year_count)) + 
+  geom_histogram(colour = "black", fill = "deepskyblue3", 
+                 bins = 5)+labs(
+                   title="Histogram of Significant ADRs",
+                   x="Number of Years ADRs Occur",
+                   y="Number of ADRs") +theme(panel.background=element_rect(fill="lightblue"))
+
+
+```
+Comparing overlap between ADRs discovered in pooled data vs yearly
+```{r overlap}
+overlap=merge(ADRs_allyears_restricted, year_counts0_restricted,by="ADRs",all=TRUE)
+overlap$year_count[is.na(overlap$year_count)]=0
+ggplot(overlap, aes(x = year_count)) + 
+  geom_histogram(colour = "black", fill = "deepskyblue3", 
+                 bins = 5)+labs(
+                   title="Comparison of Yearly ADRs vs Pooled (0 years)",
+                   x="Number of Years ADRs Occur",
+                   y="Number of ADRs") +theme(panel.background=element_rect(fill="lightblue"))
+
+
+
+```
+Examining all reports related to a specific ADR
+```{r reports}
+medicationerror=zoloft_allyears[zoloft_allyears$pt=="Medication error",]
+pulmonarytox=zoloft_allyears[zoloft_allyears$pt=="Pulmonary toxicity",]
+
+pulmonarysten=zoloft_allyears[zoloft_allyears$pt=="Pulmonary artery stenosis",]
+
+medicationerror_reports=return_all_reports(zoloft_allyears, medicationerror)
+ME_outcomes=count_outcomes(medicationerror)
+
+
+pulmonarytox_reports=return_all_reports(zoloft_allyears, pulmonarytox)
+pulmonarysten_reports=return_all_reports(zoloft_allyears, pulmonarysten)
+
+```
+
+Compiling all PRR and ROR for significant ADR signals
+```{r ipic restricted}
+ipic2024_restricted <-  merge(merge(year_counts3_restricted, ic_2024_restricted, by = 'ADRs'),ip_2024_restricted, by="ADRs")
+ipic2023_restricted <-  merge(merge(year_counts3_restricted, ic_2023_restricted, by = 'ADRs'),ip_2023_restricted, by="ADRs")
+ipic2022_restricted <-  merge(merge(year_counts3_restricted, ic_2022_restricted, by = 'ADRs'),ip_2022_restricted, by="ADRs")
+ipic2021_restricted <-  merge(merge(year_counts3_restricted, ic_2021_restricted, by = 'ADRs'),ip_2021_restricted, by="ADRs")
+ipic2020_restricted <-  merge(merge(year_counts3_restricted, ic_2020_restricted, by = 'ADRs'),ip_2020_restricted, by="ADRs")
+```
+
+```{r ipic unrestricted}
+ipic2024_unrestricted <-  merge(merge(year_counts3_unrestricted, ic_2024_unrestricted, by = 'ADRs'),ip_2024_unrestricted, by="ADRs")
+ipic2023_unrestricted <-  merge(merge(year_counts3_unrestricted, ic_2023_unrestricted, by = 'ADRs'),ip_2023_unrestricted, by="ADRs")
+ipic2022_unrestricted <-  merge(merge(year_counts3_unrestricted, ic_2022_unrestricted, by = 'ADRs'),ip_2022_unrestricted, by="ADRs")
+ipic2021_unrestricted <-  merge(merge(year_counts3_unrestricted, ic_2021_unrestricted, by = 'ADRs'),ip_2021_unrestricted, by="ADRs")
+ipic2020_unrestricted <-  merge(merge(year_counts3_unrestricted, ic_2020_unrestricted, by = 'ADRs'),ip_2020_unrestricted, by="ADRs")
+```
+Venn diagram comparing ADRs from second-stage and first-stage cleaning.
+```{r adrvenn}
+firststageADRs=list("Colitis microscopic", "Dyspepsia", "Atrial septal defect", "Foetal exposure during pregnancy", "Libido decreased", "Medication error", "Upper gastrointestinal haemorrhage", "Genital anaesthesia", "Blood testosterone decreased", "Bruxism", "Colitis", "Diarrhoea", "Disturbance in sexual arousal", "Exophthalmos", "Female sexual dysfunction", "Gastrooesophageal reflux disease", "Haematemesis", "Hot flush", 'Hypomania', "Loss of libido", "Maculopathy", "Male sexual dysfunction","Newborn persistent pulmonary hypertension", "Rhabdomyolysis", "Trismus" , "Pulmonary artery stenosis", "Pulmonary toxicity")
+
+
+secondstageADRs=list("Blood creatine phosphokinase increased", "Bruxism", "Colitis microscopic", "Diarrhoea", "Disturbance in sexual arousal", "Dyspepsia", "Female sexual dysfunction", "Hypomania", "Libido decreased", "Loss of libido", "Medication error", 'Upper gastrointestinal haemorrhage', "Pulmonary artery stenosis", "Pulmonary toxicity")
+
+venn.diagram(x=list(firststageADRs, secondstageADRs),category.names = c("Stage 1 cleaning", "Stage 2 cleaning"),filename = NULL, col=c('#21908dff', '#fde725ff'),fill =c(alpha('#21908dff',0.3), alpha('#fde725ff',0.3)))
+
+```
+
+Calculate overlap between yearly and pooled data in three years.
+```{r overlap}
+test=merge(ADRs_allyears_restricted, year_counts3_restricted,by="ADRs",all=FALSE)
+print(test)
+```
